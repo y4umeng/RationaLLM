@@ -1,29 +1,23 @@
 import pybbn
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion
+from utils import get_response, get_boolean_completion, clean_text
 
-class RationaLLM():
+class RationalLLM():
     """
         Model
     """
     def __init__(self):
         pass
 
-    def get_nodes(text):
+    def get_nodes(self, text):
         # instruction modified from https://arxiv.org/pdf/2309.11392.pdf
-        instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with the bullet list and nothing else.'
+        instruction = 'Split the sentence into bulleted predicates'
         response = get_response(text, instruction, 0)
         unformatted_nodes = response.split('\n')
-        nodes = []
-        punc = ".,!?"
-        for n in unformatted_nodes:
-            n = n.strip()
-            if n[-1] in punc: n = n[:-1]
-            while len(n) and not n[0].isalpha(): n = n[1:]
-            if len(n) > 3: nodes.append(n)
+        nodes = [clean_text(text) for text in unformatted_nodes]
             
         return nodes
-    
+
     def gen_parent(text, child, supporting=True):
         if supporting:
             instruction = f'You believe everything in the following text to be true. {text}'
@@ -46,6 +40,25 @@ class RationaLLM():
         truth_val, probs = response
         return parent, probs
     
+    def factor_proposal(self, node):
+        instructionChild = 'What factors are the implications of the phrase. Give only the title of each factor in a bullet list'
+        instructionParent = 'What factors imply the phrase. Give only the title of each factor in a bullet list'
 
-        
-    
+        children = get_response(instructionChild, node, 0.6)
+        parents = get_response(instructionParent, node, 0.6)
+
+        children = [clean_text(i) for i in children.split('\n')]
+        parents = [clean_text(i) for i in parents.split('\n')]
+
+        factors = parents + children
+
+        #parents = [' '.join(line.split(':')[0].split(' ')[1:]) for line in parents.split('\n')[1:] if line != '']
+        return factors, parents,children
+
+    def edge_probability(self, u, v):
+        instruction = 'On a scale of 1 to 5, how true is this sentence. give only a number nothing else:'
+        text = u +  ' influences ' + v
+        r = get_response(instruction, text, 0.6)
+        return int(r)/5
+
+

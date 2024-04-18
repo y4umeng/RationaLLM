@@ -43,5 +43,8 @@ def get_boolean_completion(statement, text=None):
         return int(answer), [log0/sum, log1/sum]
     return None
 
+def clean_text(text):
+    return ''.join([char for char in text.lower() if ord(char) >= 97 and ord(char) <= 122 or char == ' ']).strip()
+
 
 
