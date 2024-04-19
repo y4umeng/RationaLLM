@@ -55,10 +55,22 @@ class RationalLLM():
         #parents = [' '.join(line.split(':')[0].split(' ')[1:]) for line in parents.split('\n')[1:] if line != '']
         return factors, parents,children
 
+    def factor_parsing(self, factors, size = 5):
+        instruction = 'Condense the list into only' + str(size) + 'distinct factors and nothing else in a bullet form:'
+        r = get_response(instruction, ','.join(factors), 0.6)
+
+        factors = [clean_text(i) for i in r.split('\n')]
+
+        return factors
+
     def edge_probability(self, u, v):
         instruction = 'On a scale of 1 to 5, how true is this sentence. give only a number nothing else:'
-        text = u +  ' influences ' + v
+        text = u + ' influences ' + v
         r = get_response(instruction, text, 0.6)
-        return int(r)/5
+        try:
+            return int(r)/5
+        except:
+            return 0
 
-
+    def compare_prompt(self, prompt, edge):
+        pass
