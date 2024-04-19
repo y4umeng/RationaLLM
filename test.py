@@ -1,134 +1,29 @@
 from model import RationalLLM
 from utils import get_response, get_boolean_completion
-from BeliefNet import BeliefNetwork
+from BeliefNet import DAG
+from main import prompt_to_output, prompt_to_output_test
 
 rationalLLM = RationalLLM()
-instructionChild = 'What factors are the implications of the sentence. Give only the title of each factor in a bullet list'
-instruction = 'What factors imply the sentence. Give only the title of each factor in a bullet list'
+
 texts = ['Eating meat causes cancer',
 'Brexit would not have passed if the entire population had voted',
-]
-'The chicken came before the egg'
-# nodes = []
-# for text in texts:
-#     nodes.append(rationalLLM.get_nodes(text))
+'The chicken came before the egg',
+'''Experts have told the BBC that the current Covid surge in China is "unlikely" to impact India, but they urged people to stay cautious and wear masks.
 
-# print(nodes)
-nodes = [['Eating meat', 'Causes cancer'], ['Brexit would not have passed', 'The entire population had voted'], ['The chicken came', 'The egg came after the chicken']]
-print(nodes)
+India has stepped up surveillance after a spike in cases in neighbouring China.
 
-# factors = []
-# for node in nodes:
-#     factors.append([])
-#     for n in node:
-#         factors[-1].append(rationalLLM.factor_proposal(n))
-# print(factors)
-factors = [[(['cultural and social norms', 'personal beliefs and values', 'health concerns', 'environmental impact', 'availability and accessibility', 'dietary preferences and taste', 'health implications', 'environmental implications', 'ethical implications', 'cultural implications', 'economic implications'], ['cultural and social norms', 'personal beliefs and values', 'health concerns', 'environmental impact', 'availability and accessibility', 'dietary preferences and taste'], ['health implications', 'environmental implications', 'ethical implications', 'cultural implications', 'economic implications']), (['genetics', 'environmental pollutants', 'radiation exposure', 'tobacco use', 'alcohol consumption', 'poor diet and physical inactivity', 'viral infections', 'occupational hazards', 'hormonal imbalances', 'chronic inflammation', 'as an ai language model i am not sure which phrase you are referring to can you please provide me with the phrase'], ['genetics', 'environmental pollutants', 'radiation exposure', 'tobacco use', 'alcohol consumption', 'poor diet and physical inactivity', 'viral infections', 'occupational hazards', 'hormonal imbalances', 'chronic inflammation'], ['as an ai language model i am not sure which phrase you are referring to can you please provide me with the phrase'])], [(['factors that imply the phrase brexit would not have passed', '', 'the impact of misinformation and propaganda during the campaign', 'the lack of clarity and understanding about the consequences of leaving the eu', 'the narrow margin of victory for leave and the high number of undecided voters', 'the failure of the remain campaign to effectively communicate the benefits of eu membership', 'the role of immigration as a divisive issue in the referendum', 'the potential influence of external factors such as russian interference or the cambridge analytica scandal', 'political climate', 'demographics', 'economic factors', 'media influence', 'campaign strategies'], ['factors that imply the phrase brexit would not have passed', '', 'the impact of misinformation and propaganda during the campaign', 'the lack of clarity and understanding about the consequences of leaving the eu', 'the narrow margin of victory for leave and the high number of undecided voters', 'the failure of the remain campaign to effectively communicate the benefits of eu membership', 'the role of immigration as a divisive issue in the referendum', 'the potential influence of external factors such as russian interference or the cambridge analytica scandal'], ['political climate', 'demographics', 'economic factors', 'media influence', 'campaign strategies']), (['factors that imply the phrase the entire population had voted', '', 'universal suffrage', 'high voter turnout', 'accessible polling stations', 'efficient electoral administration', 'minimal voter suppression or intimidation', 'adequate voter education and awareness', 'increased democratic participation', 'accurate representation of the will of the people', 'potential for higher voter turnout', 'greater legitimacy of election results'], ['factors that imply the phrase the entire population had voted', '', 'universal suffrage', 'high voter turnout', 'accessible polling stations', 'efficient electoral administration', 'minimal voter suppression or intimidation', 'adequate voter education and awareness'], ['increased democratic participation', 'accurate representation of the will of the people', 'potential for higher voter turnout', 'greater legitimacy of election results'])], [(['sorry but i need more context to understand which factors you are referring to please provide more information about the phrase or sentence', 'im sorry but the phrase the chicken came is incomplete and lacks context it is not clear what implications or factors are being referred to can you please provide more information or context so i can assist you better'], ['sorry but i need more context to understand which factors you are referring to please provide more information about the phrase or sentence'], ['im sorry but the phrase the chicken came is incomplete and lacks context it is not clear what implications or factors are being referred to can you please provide more information or context so i can assist you better']), (['factors suggesting that the egg came after the chicken', '', 'evolutionary history', 'genetic mutations', 'natural selection', 'reproductive adaptations', 'evolutionary biology', 'genetics', 'reproduction', 'philosophy of causation', 'linguistics and semantics'], ['factors suggesting that the egg came after the chicken', '', 'evolutionary history', 'genetic mutations', 'natural selection', 'reproductive adaptations'], ['evolutionary biology', 'genetics', 'reproduction', 'philosophy of causation', 'linguistics and semantics'])]]
+People travelling from China and four other Asian countries now have to produce a Covid-19 negative test report before entering India.
 
-for i in range(len(nodes)):
-    for j in range(len(nodes[i])):
-        print(nodes[i][j], ':')
-        print('parents:')
-        [print('    ', i) for i in factors[i][j][1]]
-        print('children:')
-        [print('    ', i) for i in factors[i][j][2]]
+On Tuesday, drills were held to check if hospitals could handle a surge.
 
-factors0 = []
-for factor in factors[0]:
-    factors0.extend(factor[0])
+According to government data, India currently has only around 3,400 active coronavirus cases. But reports of the surge in China and the memories of two deadly Covid waves in 2020 and 2021 in India have made many people fearful.''']
 
-# factors0 = rationalLLM.factor_parsing(factors0) + nodes[0]
-# print(factors0)
-factors0 = ['cultural and social norms', 'health concerns', 'availability and accessibility', 'dietary preferences and taste', 'environmental impact', 'Eating meat', 'Causes cancer']
-
-net = BeliefNetwork()
-for factor in factors0:
-    net.add(factor)
-
-# edges = []
-# for f1 in factors0:
-#     for f2 in factors0:
-#         if f1 != f2:
-#             edges.append([f1, f2, rationalLLM.edge_probability(f1, f2)])
-# print(edges)
-edges = [['cultural and social norms', 'health concerns', 0.8], ['cultural and social norms', 'availability and accessibility', 0.8], ['cultural and social norms', 'dietary preferences and taste', 1.0], ['cultural and social norms', 'environmental impact', 0.8], ['cultural and social norms', 'Eating meat', 0.6], ['cultural and social norms', 'Causes cancer', 0], ['health concerns', 'cultural and social norms', 0.8], ['health concerns', 'availability and accessibility', 0.8], ['health concerns', 'dietary preferences and taste', 0.8], ['health concerns', 'environmental impact', 0], ['health concerns', 'Eating meat', 0.6], ['health concerns', 'Causes cancer', 0.6], ['availability and accessibility', 'cultural and social norms', 0.8], ['availability and accessibility', 'health concerns', 0.6], ['availability and accessibility', 'dietary preferences and taste', 0.8], ['availability and accessibility', 'environmental impact', 0.8], ['availability and accessibility', 'Eating meat', 0.6], ['availability and accessibility', 'Causes cancer', 0.4], ['dietary preferences and taste', 'cultural and social norms', 0.8], ['dietary preferences and taste', 'health concerns', 0.8], ['dietary preferences and taste', 'availability and accessibility', 0], ['dietary preferences and taste', 'environmental impact', 0], ['dietary preferences and taste', 'Eating meat', 0.6], ['dietary preferences and taste', 'Causes cancer', 0.2], ['environmental impact', 'cultural and social norms', 0.8], ['environmental impact', 'health concerns', 1.0], ['environmental impact', 'availability and accessibility', 0], ['environmental impact', 'dietary preferences and taste', 0.6], ['environmental impact', 'Eating meat', 0.8], ['environmental impact', 'Causes cancer', 0.6], ['Eating meat', 'cultural and social norms', 0.6], ['Eating meat', 'health concerns', 0.6], ['Eating meat', 'availability and accessibility', 0.6], ['Eating meat', 'dietary preferences and taste', 0.8], ['Eating meat', 'environmental impact', 0.8], ['Eating meat', 'Causes cancer', 0.6], ['Causes cancer', 'cultural and social norms', 0.6], ['Causes cancer', 'health concerns', 0.6], ['Causes cancer', 'availability and accessibility', 0.6], ['Causes cancer', 'dietary preferences and taste', 0.4], ['Causes cancer', 'environmental impact', 0.6], ['Causes cancer', 'Eating meat', 0.6]]
-
-edges.sort(key = lambda x: x[2], reverse=True)
-[print(i) for i in edges]
-
-threshold = 0.4
-for e in edges:
-    if e[2] > threshold:
-        net.add_edge(e[0], e[1])
-    else:
-        break
+caches = [{'nodes': ['eating meat', 'causes cancer'], 'factors': ['cultural and societal norms', 'personal taste preferences', 'nutritional benefits', 'convenience and availability', 'economic factors', 'religious or ethical beliefs', 'environmental impacts', 'environmental impact', 'animal welfare', 'health concerns', 'cultural and social norms', 'economic implications', 'genetics', 'environmental factors', 'lifestyle choices', 'exposure to radiation', 'exposure to carcinogens', 'viral infections', 'age', 'health consequences', 'environmental factors', 'lifestyle choices', 'genetic predisposition'], 'factorsParsed': ['cultural and social norms', 'health concerns', 'availability and accessibility', 'dietary preferences and taste', 'environmental impact', 'Eating meat', 'Causes cancer'], 'edges': [['cultural and social norms', 'health concerns', 0.8], ['cultural and social norms', 'availability and accessibility', 0.8], ['cultural and social norms', 'dietary preferences and taste', 1.0], ['cultural and social norms', 'environmental impact', 0.8], ['cultural and social norms', 'Eating meat', 0.6], ['health concerns', 'cultural and social norms', 0.8], ['health concerns', 'availability and accessibility', 0.8], ['health concerns', 'dietary preferences and taste', 0.8], ['health concerns', 'Eating meat', 0.6], ['health concerns', 'Causes cancer', 0.6], ['availability and accessibility', 'cultural and social norms', 0.8], ['availability and accessibility', 'health concerns', 0.6], ['availability and accessibility', 'dietary preferences and taste', 0.8], ['availability and accessibility', 'environmental impact', 0.8], ['availability and accessibility', 'Eating meat', 0.6], ['dietary preferences and taste', 'cultural and social norms', 0.8], ['dietary preferences and taste', 'health concerns', 0.8], ['dietary preferences and taste', 'Eating meat', 0.6], ['environmental impact', 'cultural and social norms', 0.8], ['environmental impact', 'health concerns', 1.0], ['environmental impact', 'dietary preferences and taste', 0.6], ['environmental impact', 'Eating meat', 0.8], ['environmental impact', 'Causes cancer', 0.6], ['Eating meat', 'cultural and social norms', 0.6], ['Eating meat', 'health concerns', 0.6], ['Eating meat', 'availability and accessibility', 0.6], ['Eating meat', 'dietary preferences and taste', 0.8], ['Eating meat', 'environmental impact', 0.8], ['Eating meat', 'Causes cancer', 0.6], ['Causes cancer', 'cultural and social norms', 0.6], ['Causes cancer', 'health concerns', 0.6], ['Causes cancer', 'availability and accessibility', 0.6], ['Causes cancer', 'environmental impact', 0.6], ['Causes cancer', 'Eating meat', 0.6]]},
+          {},
+          {'nodes': ['brexit passed without the entire population voting', 'the entire population did not vote for brexit'], 'factors': ['political decisionmaking', 'limited suffrage', 'referendum rules and regulations', 'voter turnout and participation', 'lack of democratic representation', 'potential for increased political polarization', 'uncertainty and potential economic consequences', 'possible negative impact on international relations', 'decreased trust in government and political institutions', 'incomplete voter turnout', 'demographic disparities in voting patterns', 'regional variations in voting preferences', 'campaign messaging and strategies', 'incomplete mandate for brexit', 'divided public opinion', 'potential lack of representation for nonvoters', 'uncertainty about the true will of the people', 'possible challenges to the legitimacy of the brexit decision'], 'factorsParsed': ['political decisionmaking', 'limited suffrage', 'referendum rules and regulations', 'voter turnout and participation', 'lack of democratic representation', 'brexit passed without the entire population voting', 'the entire population did not vote for brexit'], 'edges': [['political decisionmaking', 'lack of democratic representation', 1.0], ['limited suffrage', 'lack of democratic representation', 1.0], ['voter turnout and participation', 'political decisionmaking', 1.0], ['lack of democratic representation', 'political decisionmaking', 1.0], ['political decisionmaking', 'limited suffrage', 0.8], ['political decisionmaking', 'referendum rules and regulations', 0.8], ['political decisionmaking', 'voter turnout and participation', 0.8], ['political decisionmaking', 'the entire population did not vote for brexit', 0.8], ['limited suffrage', 'political decisionmaking', 0.8], ['limited suffrage', 'referendum rules and regulations', 0.8], ['limited suffrage', 'voter turnout and participation', 0.8], ['referendum rules and regulations', 'voter turnout and participation', 0.8], ['voter turnout and participation', 'lack of democratic representation', 0.8], ['lack of democratic representation', 'limited suffrage', 0.8], ['lack of democratic representation', 'referendum rules and regulations', 0.8], ['lack of democratic representation', 'voter turnout and participation', 0.8], ['the entire population did not vote for brexit', 'political decisionmaking', 0.8], ['the entire population did not vote for brexit', 'referendum rules and regulations', 0.8], ['the entire population did not vote for brexit', 'lack of democratic representation', 0.8], ['the entire population did not vote for brexit', 'brexit passed without the entire population voting', 0.8], ['political decisionmaking', 'brexit passed without the entire population voting', 0.6], ['referendum rules and regulations', 'political decisionmaking', 0.6], ['referendum rules and regulations', 'limited suffrage', 0.6], ['referendum rules and regulations', 'lack of democratic representation', 0.6], ['referendum rules and regulations', 'brexit passed without the entire population voting', 0.6], ['voter turnout and participation', 'referendum rules and regulations', 0.6], ['voter turnout and participation', 'brexit passed without the entire population voting', 0.6], ['lack of democratic representation', 'brexit passed without the entire population voting', 0.6], ['lack of democratic representation', 'the entire population did not vote for brexit', 0.6], ['brexit passed without the entire population voting', 'lack of democratic representation', 0.6], ['brexit passed without the entire population voting', 'the entire population did not vote for brexit', 0.6], ['the entire population did not vote for brexit', 'limited suffrage', 0.6], ['the entire population did not vote for brexit', 'voter turnout and participation', 0.6]]},
+          {'nodes': ['experts say the current covid surge in china is unlikely to impact india', 'india has increased surveillance after a spike in cases in neighbouring china', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'drills were held to check if hospitals could handle a surge', 'india currently has only around  active coronavirus cases'], 'factors': ['expert analysis and opinion', 'comparison of covid situation in china and india', 'analysis of covid surge in china', 'comparison of covid situation in china and india', 'factors leading to the unlikely impact of covid surge in india', 'geographical proximity to china', 'increase in covid cases in china', 'concerns about potential spread of the virus to india', 'need for heightened surveillance to prevent transmission', 'geopolitical tensions', 'public health concerns', 'diplomatic relations', 'economic impact', 'national security measures', 'travel origin from china and four other asian countries', 'covid negative test report', 'factors and implications', '', 'travel restrictions this measure implies that india has currently imposed travel restrictions on people coming from china and four other asian countries', 'covid testing the requirement of a negative covid test report means that india is taking steps to prevent the spread of the virus and is prioritizing the safety of its citizens', 'international cooperation this measure also highlights the need for international cooperation in managing the pandemic and controlling its spread', 'economic impact the travel restrictions may have an economic impact on the tourism industry and other businesses that rely on international travel', 'public health concerns the measure indicates that india is taking public health concerns seriously and is willing to take necessary actions to safeguard its population', 'factors that imply the phrase drills were held to check if hospitals could handle a surge', '', 'preparedness measures', 'surge capacity assessment', 'emergency response planning', 'disaster management protocols', 'risk mitigation strategies', 'of covid patients', '', 'hospital capacity', 'preparedness', 'surge capacity', 'pandemic response planning', 'resource allocation', 'sorry but i cannot provide factors that imply the given phrase as it is a statement of fact and does not contain any factors', 'sorry but it seems that the given phrase is incomplete and doesnt provide enough context to identify the factors and implications could you please provide more information or a complete sentence'], 'factorsParsed': ['im sorry as an ai language model i cannot provide you with the complete sentence or more information about the phrase you have mentioned without any context please provide more information or a complete sentence so that i can assist you better', 'experts say the current covid surge in china is unlikely to impact india', 'india has increased surveillance after a spike in cases in neighbouring china', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'drills were held to check if hospitals could handle a surge', 'india currently has only around  active coronavirus cases'], 'edges': [['people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'drills were held to check if hospitals could handle a surge', 1.0], ['experts say the current covid surge in china is unlikely to impact india', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 0.8], ['india has increased surveillance after a spike in cases in neighbouring china', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 0.8], ['people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'india has increased surveillance after a spike in cases in neighbouring china', 0.8], ['drills were held to check if hospitals could handle a surge', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 0.8], ['india currently has only around  active coronavirus cases', 'india has increased surveillance after a spike in cases in neighbouring china', 0.8], ['im sorry as an ai language model i cannot provide you with the complete sentence or more information about the phrase you have mentioned without any context please provide more information or a complete sentence so that i can assist you better', 'drills were held to check if hospitals could handle a surge', 0.6], ['experts say the current covid surge in china is unlikely to impact india', 'india has increased surveillance after a spike in cases in neighbouring china', 0.6], ['experts say the current covid surge in china is unlikely to impact india', 'drills were held to check if hospitals could handle a surge', 0.6], ['india has increased surveillance after a spike in cases in neighbouring china', 'experts say the current covid surge in china is unlikely to impact india', 0.6], ['india has increased surveillance after a spike in cases in neighbouring china', 'drills were held to check if hospitals could handle a surge', 0.6], ['india has increased surveillance after a spike in cases in neighbouring china', 'india currently has only around  active coronavirus cases', 0.6], ['people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'experts say the current covid surge in china is unlikely to impact india', 0.6], ['people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 'india currently has only around  active coronavirus cases', 0.6], ['drills were held to check if hospitals could handle a surge', 'experts say the current covid surge in china is unlikely to impact india', 0.6], ['drills were held to check if hospitals could handle a surge', 'india has increased surveillance after a spike in cases in neighbouring china', 0.6], ['drills were held to check if hospitals could handle a surge', 'india currently has only around  active coronavirus cases', 0.6], ['india currently has only around  active coronavirus cases', 'experts say the current covid surge in china is unlikely to impact india', 0.6], ['india currently has only around  active coronavirus cases', 'people travelling from china and four other asian countries need to produce a covid negative test report before entering india', 0.6], ['india currently has only around  active coronavirus cases', 'drills were held to check if hospitals could handle a surge', 0.6]]}]
+net, interpretations, cache = prompt_to_output_test(texts[0], caches[0])
+print(cache)
 
 net.display()
-
 print(4)
-from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion
-from model import RationaLLM
-from pybbn.graph.dag import Bbn
-from pybbn.graph.edge import Edge, EdgeType
-from pybbn.graph.jointree import EvidenceBuilder
-from pybbn.graph.node import BbnNode
-from pybbn.graph.variable import Variable
-from pybbn.pptc.inferencecontroller import InferenceController
-
-# message = """
-# The United States will cross a historic threshold on Monday when for the first time a former president goes on criminal trial in a case laced with fateful significance because Donald Trump could be back in the Oval Office next year.
-
-# When the presumptive GOP nominee walks into court for the start of jury selection, he and the country will enter a new state of reality as legal and political worlds collide in a trial almost guaranteed to deepen Americans’ bitter ideological estrangement.
-# """
-short_message = 'The United States will cross a historic threshold on Monday when for the first time a former president goes on criminal trial in a case laced with fateful significance because Donald Trump could be back in the Oval Office next year.' 
-# # https://arxiv.org/pdf/2309.11392.pdf
-
-paper_example = 'Heating ice will leave a puddle'
-# earth = 'The earth is flat.'
-
-class_example = "The United States on Sunday highlighted its role in helping Israel thwart Iran’s aerial attack as President Joe Biden convened leaders of the Group of Seven countries in an effort to prevent a wider regional escalation and coordinate a global rebuke of Tehran."
-model = RationaLLM()
-nodes = RationaLLM.get_nodes(class_example)
-print(nodes)
-print(RationaLLM.gen_parent(class_example, nodes[0], supporting=True))
-
-# Trump said "We should help Isreal" is another entailment. 
-#
-
-# print(nodes)
-# for n in nodes:
-#     truth = get_completion(short_message, n)
-#     print(f'{n}. Truth: {truth[0]}')
-# print(get_completion("Trump was a good president"))
-
-
-
-# a = BbnNode(Variable(0, 'a', ['on', 'off']), [0.5, 0.5])
-# b = BbnNode(Variable(1, 'b', ['on', 'off']), [0.5, 0.5, 0.4, 0.6])
-
-# a.probs = [0.2, 0.1]
-# attrs = vars(a)
-# print(', '.join("%s: %s" % item for item in attrs.items()))
-
-# # create the network structure
-# bbn = Bbn() \
-#     .add_node(a) \
-#     .add_node(b) \
-#     .add_edge(Edge(a, b, EdgeType.DIRECTED)) 
-
-# # convert the BBN to a join tree
-# join_tree = InferenceController.apply(bbn)
-
-# # insert an observation evidence
-# ev = EvidenceBuilder() \
-#     .with_node(join_tree.get_bbn_node_by_name('a')) \
-#     .with_evidence('on', 1.0) \
-#     .build()
-# join_tree.set_observation(ev)
-
-# # print the marginal probabilities
-# for node in join_tree.get_bbn_nodes():
-#     potential = join_tree.get_bbn_potential(node)
-#     print(node)
-#     print(potential)
