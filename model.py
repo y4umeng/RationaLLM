@@ -1,17 +1,28 @@
 import pybbn
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion, clean_text
+from utils import get_response, get_boolean_completion
+from pybbn.graph.dag import Bbn
+from pybbn.graph.edge import Edge, EdgeType
+from pybbn.graph.jointree import EvidenceBuilder
+from pybbn.graph.node import BbnNode
+from pybbn.graph.variable import Variable
+from pybbn.pptc.inferencecontroller import InferenceController
 
 class RationalLLM():
     """
         Model
     """
     def __init__(self):
+        # self.leaves = self.get_nodes(text)
+        # self.graphs = []
+        # for node in self.leaves:
+        #     graph_size = 1
+        #     while graph_size < 10:
         pass
 
     def get_nodes(self, text):
         # instruction modified from https://arxiv.org/pdf/2309.11392.pdf
-        instruction = 'Split the sentence into bulleted predicates'
+        instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with a bulleted list and nothing else.'
         response = get_response(text, instruction, 0)
         unformatted_nodes = response.split('\n')
         nodes = [clean_text(text) for text in unformatted_nodes]
