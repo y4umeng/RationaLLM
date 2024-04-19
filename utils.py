@@ -1,7 +1,7 @@
 from openai import AzureOpenAI
 from client import client
 from math import exp
-from BeliefNet import BeliefNetwork
+from BeliefNet import DAG
 
 def get_response(message, instruction, temp):
     response = client.chat.completions.create(

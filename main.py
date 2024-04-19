@@ -1,10 +1,10 @@
 from model import RationalLLM
-from BeliefNet import BeliefNetwork
+from BeliefNet import DAG
 from utils import cache_wrapper
 
 def prompt_to_output_test(text, cache = {}):
     rationalLLM = RationalLLM()
-    net = BeliefNetwork()
+    net = DAG()
 
     nodes = cache_wrapper(cache, 'nodes', rationalLLM.get_nodes, text)
     print('nodes')
@@ -19,7 +19,7 @@ def prompt_to_output_test(text, cache = {}):
     print(factorsParsed)
 
     for factor in factorsParsed:
-        net.add(factor)
+        net.add_node(factor)
 
     edges = cache_wrapper(cache, 'edges', rationalLLM.get_edges, factorsParsed)
     print('edges')
@@ -28,11 +28,15 @@ def prompt_to_output_test(text, cache = {}):
     for e in edges:
         net.add_edge(e[0], e[1])
 
-    return net, cache
+    interpretations = cache_wrapper(cache, 'interpretations', rationalLLM.interpret_graph, net, text)
+    print('interpretations')
+    print(interpretations)
+
+    return net, interpretations, cache
 
 def prompt_to_output(text):
     rationalLLM = RationalLLM()
-    net = BeliefNetwork()
+    net = DAG()
 
     nodes = rationalLLM.get_nodes(text)
 
@@ -41,11 +45,13 @@ def prompt_to_output(text):
     factors = rationalLLM.factor_parsing(factors, nodes)
 
     for factor in factors:
-        net.add(factor)
+        net.add_node(factor)
 
     edges = rationalLLM.get_edges(factors)
 
     for e in edges:
         net.add_edge(e[0], e[1])
 
-    return net
+    interpretations = rationalLLM.interpret_graph(net, text)
+
+    return net, interpretations

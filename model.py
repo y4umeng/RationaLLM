@@ -11,7 +11,8 @@ class RationalLLM():
 
     def get_nodes(self, text):
         # instruction modified from https://arxiv.org/pdf/2309.11392.pdf
-        instruction = 'Split the sentence into bulleted predicates'
+        #instruction = 'Split the sentence into bulleted predicates'
+        instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with the bullet list and nothing else.'
         response = get_response(text, instruction, 0)
         unformatted_nodes = response.split('\n')
         nodes = [clean_text(text) for text in unformatted_nodes]
@@ -96,5 +97,20 @@ class RationalLLM():
         return [i for i in edges if i[-1] > threshold]
 
     def compare_prompt(self, prompt, edge):
-        instruction =
+        statement = edge[0] + ' influences ' + edge[1]
+        return get_boolean_completion(statement, prompt)
+
+    def interpret_graph(self, graph, prompt, threshold = 0.2):
+        interpretations = []
+        for edge in graph.edges():
+            r = self.compare_prompt(prompt, edge)
+            if r[1][1] < threshold:
+                interpretations.append(edge[0] + ' also influences ' + edge[1])
+            else:
+                print('!!', edge)
+
+        return interpretations
+
+
+
 

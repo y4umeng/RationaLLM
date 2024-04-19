@@ -1,6 +1,6 @@
 from model import RationalLLM
 from utils import get_response, get_boolean_completion
-from BeliefNet import BeliefNetwork
+from BeliefNet import DAG
 
 rationalLLM = RationalLLM()
 instructionChild = 'What factors are the implications of the sentence. Give only the title of each factor in a bullet list'
@@ -40,9 +40,9 @@ for factor in factors[0]:
 # print(factors0)
 factors0 = ['cultural and social norms', 'health concerns', 'availability and accessibility', 'dietary preferences and taste', 'environmental impact', 'Eating meat', 'Causes cancer']
 
-net = BeliefNetwork()
+net = DAG()
 for factor in factors0:
-    net.add(factor)
+    net.add_node(factor)
 
 # edges = []
 # for f1 in factors0:
