@@ -1,12 +1,23 @@
 import pybbn
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion, clean_text
+from utils import get_response, get_boolean_completion
+from pybbn.graph.dag import Bbn
+from pybbn.graph.edge import Edge, EdgeType
+from pybbn.graph.jointree import EvidenceBuilder
+from pybbn.graph.node import BbnNode
+from pybbn.graph.variable import Variable
+from pybbn.pptc.inferencecontroller import InferenceController
 
 class RationalLLM():
     """
         Model
     """
     def __init__(self):
+        # self.leaves = self.get_nodes(text)
+        # self.graphs = []
+        # for node in self.leaves:
+        #     graph_size = 1
+        #     while graph_size < 10:
         pass
 
     def get_nodes(self, text):
