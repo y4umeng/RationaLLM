@@ -1,12 +1,6 @@
 import pybbn
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion
-from pybbn.graph.dag import Bbn
-from pybbn.graph.edge import Edge, EdgeType
-from pybbn.graph.jointree import EvidenceBuilder
-from pybbn.graph.node import BbnNode
-from pybbn.graph.variable import Variable
-from pybbn.pptc.inferencecontroller import InferenceController
+from utils import get_response, get_boolean_completion, clean_text
 
 class RationalLLM():
     """
