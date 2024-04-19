@@ -7,8 +7,8 @@ instructionChild = 'What factors are the implications of the sentence. Give only
 instruction = 'What factors imply the sentence. Give only the title of each factor in a bullet list'
 texts = ['Eating meat causes cancer',
 'Brexit would not have passed if the entire population had voted',
-'The chicken came before the egg']
-
+]
+'The chicken came before the egg'
 # nodes = []
 # for text in texts:
 #     nodes.append(rationalLLM.get_nodes(text))
@@ -34,10 +34,35 @@ for i in range(len(nodes)):
         [print('    ', i) for i in factors[i][j][2]]
 
 factors0 = []
-for i in factors[0]:
-    for node in i:
-        factors0.append(node)
+for factor in factors[0]:
+    factors0.extend(factor[0])
+
+# factors0 = rationalLLM.factor_parsing(factors0) + nodes[0]
+# print(factors0)
+factors0 = ['cultural and social norms', 'health concerns', 'availability and accessibility', 'dietary preferences and taste', 'environmental impact', 'Eating meat', 'Causes cancer']
 
 net = BeliefNetwork()
+for factor in factors0:
+    net.add(factor)
+
+# edges = []
+# for f1 in factors0:
+#     for f2 in factors0:
+#         if f1 != f2:
+#             edges.append([f1, f2, rationalLLM.edge_probability(f1, f2)])
+# print(edges)
+edges = [['cultural and social norms', 'health concerns', 0.8], ['cultural and social norms', 'availability and accessibility', 0.8], ['cultural and social norms', 'dietary preferences and taste', 1.0], ['cultural and social norms', 'environmental impact', 0.8], ['cultural and social norms', 'Eating meat', 0.6], ['cultural and social norms', 'Causes cancer', 0], ['health concerns', 'cultural and social norms', 0.8], ['health concerns', 'availability and accessibility', 0.8], ['health concerns', 'dietary preferences and taste', 0.8], ['health concerns', 'environmental impact', 0], ['health concerns', 'Eating meat', 0.6], ['health concerns', 'Causes cancer', 0.6], ['availability and accessibility', 'cultural and social norms', 0.8], ['availability and accessibility', 'health concerns', 0.6], ['availability and accessibility', 'dietary preferences and taste', 0.8], ['availability and accessibility', 'environmental impact', 0.8], ['availability and accessibility', 'Eating meat', 0.6], ['availability and accessibility', 'Causes cancer', 0.4], ['dietary preferences and taste', 'cultural and social norms', 0.8], ['dietary preferences and taste', 'health concerns', 0.8], ['dietary preferences and taste', 'availability and accessibility', 0], ['dietary preferences and taste', 'environmental impact', 0], ['dietary preferences and taste', 'Eating meat', 0.6], ['dietary preferences and taste', 'Causes cancer', 0.2], ['environmental impact', 'cultural and social norms', 0.8], ['environmental impact', 'health concerns', 1.0], ['environmental impact', 'availability and accessibility', 0], ['environmental impact', 'dietary preferences and taste', 0.6], ['environmental impact', 'Eating meat', 0.8], ['environmental impact', 'Causes cancer', 0.6], ['Eating meat', 'cultural and social norms', 0.6], ['Eating meat', 'health concerns', 0.6], ['Eating meat', 'availability and accessibility', 0.6], ['Eating meat', 'dietary preferences and taste', 0.8], ['Eating meat', 'environmental impact', 0.8], ['Eating meat', 'Causes cancer', 0.6], ['Causes cancer', 'cultural and social norms', 0.6], ['Causes cancer', 'health concerns', 0.6], ['Causes cancer', 'availability and accessibility', 0.6], ['Causes cancer', 'dietary preferences and taste', 0.4], ['Causes cancer', 'environmental impact', 0.6], ['Causes cancer', 'Eating meat', 0.6]]
+
+edges.sort(key = lambda x: x[2], reverse=True)
+[print(i) for i in edges]
+
+threshold = 0.4
+for e in edges:
+    if e[2] > threshold:
+        net.add_edge(e[0], e[1])
+    else:
+        break
+
+net.display()
 
 print(4)

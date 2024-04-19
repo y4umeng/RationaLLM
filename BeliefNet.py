@@ -11,5 +11,11 @@ class BeliefNetwork():
     def add(self, node):
         self.network.add_node(node)
 
-    def show_graph(self):
+    def add_edge(self, a, b):
+        self.network.add_edge(a, b)
+        if not nx.is_directed_acyclic_graph(self.network):
+            self.network.remove_edge(a, b)
+
+    def display(self):
         nx.draw(self.network, with_labels=True)
+        plt.draw()
