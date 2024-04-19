@@ -1,6 +1,7 @@
 from openai import AzureOpenAI
 from client import client
 from math import exp
+from BeliefNet import BeliefNetwork
 
 def get_response(message, instruction, temp):
     response = client.chat.completions.create(
@@ -46,5 +47,8 @@ def get_boolean_completion(statement, text=None):
 def clean_text(text):
     return ''.join([char for char in text.lower() if ord(char) >= 97 and ord(char) <= 122 or char == ' ']).strip()
 
+def cache_wrapper(cache, name, function, *argv):
+    if name not in cache:
+        cache[name] = function(*argv)
 
-
+    return cache[name]

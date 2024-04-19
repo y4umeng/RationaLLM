@@ -1,4 +1,3 @@
-from openai import AzureOpenAI
 from pybbn.graph.dag import Bbn
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -19,3 +18,6 @@ class BeliefNetwork():
     def display(self):
         nx.draw(self.network, with_labels=True)
         plt.draw()
+
+    def make_edges(self, text, llm):
+        pass
