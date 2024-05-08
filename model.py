@@ -138,7 +138,7 @@ class RationalLLM():
             output[-1]["attribute"] = example["attribute"]
             output[-1]["value"] = example["value"]
             output[-1]["explanation"] = comment
-            output[-1]["span"] = span
+            output[-1]["span"] = [span]
             output[-1]["confidence"] = confidence
 
         return output
