@@ -1,4 +1,3 @@
-from pybbn.graph.dag import Bbn
 import networkx as nx
 import matplotlib.pyplot as plt
 

@@ -1,6 +1,5 @@
-import pybbn
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion, clean_text
+from utils import get_response, get_boolean_completion, clean_text, get_opinion, get_span
 
 class RationalLLM():
     """
@@ -14,37 +13,17 @@ class RationalLLM():
         #     while graph_size < 10:
         pass
 
-    def get_nodes(self, text):
+    def get_nodes(self, text, size = 3):
+        instruction = 'Extract a list of concise predicates from the text as a bulleted list'
         # instruction modified from https://arxiv.org/pdf/2309.11392.pdf
-        #instruction = 'Split the sentence into bulleted predicates'
-        instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with the bullet list and nothing else.'
+        #instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with the bullet list and nothing else.'
+        #instruction = 'Extract a list of subjects and objects from the text'
+
         response = get_response(text, instruction, 0)
         unformatted_nodes = response.split('\n')
-        nodes = [clean_text(text) for text in unformatted_nodes]
+        nodes = [clean_text(text) for text in unformatted_nodes][:size]
             
         return nodes
-
-    def gen_parent(text, child, supporting=True):
-        if supporting:
-            instruction = f'You believe everything in the following text to be true. {text}'
-            message = f"{child}. Explain the last statement with a 2-step reasoning chain. Each step must be a short statement."
-        else:
-            instruction = f'You believe everything in the following text to be false. {text}'
-            message = f"{child}. Explain why the the last statement is false with a 2-step reasoning chain. Each step must be a short factual statement."
-        
-        parent = get_response(message, instruction, 0.6)
-
-        # formatting
-        parent = parent.split('\n')[0].split(':')[-1].strip()
-        punc = ".,!?"
-        if parent[-1] in punc: parent = parent[:-1]
-
-        # check if model believes parent implies child
-        response = get_boolean_completion(f'{parent[:-1]}. This implies that {child}.')
-        if response == None: return None
-
-        truth_val, probs = response
-        return parent, probs
     
     def factor_proposal(self, node):
         instructionChild = 'What factors are the implications of the phrase. Give only the title of each factor in a bullet list'
@@ -62,11 +41,14 @@ class RationalLLM():
         return factors, parents, children
 
 
-    def factor_parsing(self, factors, nodes, size = 5):
+    def factor_parsing(self, factors, nodes, size = 6):
+        #instruction = remove bullet form:'
+        #r = get_response(','.join(factors), instruction, 0.6)
+
         instruction = 'Condense the list into only' + str(size) + 'distinct factors and nothing else in a bullet form:'
         r = get_response(','.join(factors), instruction, 0.6)
 
-        factors = [clean_text(i) for i in r.split('\n')]
+        factors = [clean_text(i) for i in r.split('\n')][:size]
 
         return factors + nodes
 
@@ -89,33 +71,76 @@ class RationalLLM():
         except:
             return 0
 
-    def get_edges(self, factors, threshold = 0.4):
+    def get_edges(self, factors, nodes, threshold = 0.4):
         edges = []
         for f1 in factors:
-            for f2 in factors:
-                if f1 != f2:
-                    edges.append([f1, f2, self.edge_probability(f1, f2)])
+            for f2 in nodes:
+                edges.append([f1, f2, self.edge_probability(f1, f2)])
 
         edges.sort(key = lambda x: x[2], reverse = True)
-        print(edges)
 
         return [i for i in edges if i[-1] > threshold]
-
-    def compare_prompt(self, prompt, edge):
-        statement = edge[0] + ' influences ' + edge[1]
-        return get_boolean_completion(statement, prompt)
 
     def interpret_graph(self, graph, prompt, threshold = 0.2):
         interpretations = []
         for edge in graph.edges():
-            r = self.compare_prompt(prompt, edge)
-            if r[1][1] < threshold:
-                interpretations.append(edge[0] + ' also influences ' + edge[1])
-            else:
-                print('!!', edge)
+            try:
+                statement = edge[0] + ' influences ' + edge[1]
+
+                r = get_opinion(statement, prompt)
+                if r[0] != 1 and r[1][r[0]] > threshold:
+                    if r[0] == 0:
+                        statement += '. Text disagrees.'
+
+                    else:#2
+                        statement += '. Not said in text.'
+
+                    interpretations.append([edge, statement, r[1][r[0]]])
+            except:
+                pass
 
         return interpretations
 
+    def to_Output(self, prompt, interpretations, nodes):
+        cache = {}
+        output = []
 
+        example = {"attribute": "unsaid",
+                   "value": 1,
+                   "explanation": "India may have stepped up surveillance due to an increase in cases in whole of Asia. Not said in prompt.",
+                   "span": [[151, 230]],
+                   "confidence": 0.9}
+
+        instruction = prompt + ' :Text. Choose a sentence from the text that best represents the statement. Return only the sentence in the text exactly as it appears: '
+        for edge, comment, confidence in interpretations:
+            #find span
+            if edge[0] in nodes:
+                node = edge[0]
+            else:
+                node = edge[1]
+
+            if node in cache:
+                span = cache[node]
+            else:
+                instruction = 'Return ONLY a section from the prompt that best shows the statement "' + node + '": Return only a substring of the prompt nothing else'
+                try:
+                    r = get_response(prompt, instruction, 0.6)
+    
+                    span = get_span(prompt, r)
+                except:
+                    span = [0, len(prompt) - 1]
+
+                cache[node] = span
+
+
+            output.append({})
+
+            output[-1]["attribute"] = example["attribute"]
+            output[-1]["value"] = example["value"]
+            output[-1]["explanation"] = comment
+            output[-1]["span"] = span
+            output[-1]["confidence"] = confidence
+
+        return output
 
 
