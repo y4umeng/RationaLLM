@@ -41,7 +41,7 @@ class RationalLLM():
         return factors, parents, children
 
 
-    def factor_parsing(self, factors, nodes, size = 6):
+    def factor_parsing(self, factors, nodes, size = 5):
         #instruction = remove bullet form:'
         #r = get_response(','.join(factors), instruction, 0.6)
 
@@ -139,7 +139,7 @@ class RationalLLM():
             output[-1]["value"] = example["value"]
             output[-1]["explanation"] = comment
             output[-1]["span"] = [span]
-            output[-1]["confidence"] = confidence
+            output[-1]["confidence"] = f'{confidence:.2f}'
 
         return output
 
