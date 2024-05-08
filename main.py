@@ -1,6 +1,7 @@
 from model import RationalLLM
 from BeliefNet import DAG
 from utils import cache_wrapper
+import json
 
 def prompt_to_output_test(text, cache = {}):
     rationalLLM = RationalLLM()
@@ -69,4 +70,4 @@ def prompt_to_output(text):
     return net, output
 
 def get_inferences(text):
-    return prompt_to_output(text)[1]
+    return json.dumps(prompt_to_output(text)[1])
