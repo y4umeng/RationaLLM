@@ -31,7 +31,7 @@ def prompt_to_output_test(text, cache = {}):
     print()
 
     for e in edges:
-        net.add_edge(e[0], e[1])
+        net.add_edge(e[0], e[1], e[2])
 
     interpretations = cache_wrapper(cache, 'interpretations', rationalLLM.interpret_graph, net, text)
     print('interpretations')
@@ -61,7 +61,7 @@ def prompt_to_output(text):
     edges = rationalLLM.get_edges(factors, nodes)
 
     for e in edges:
-        net.add_edge(e[0], e[1])
+        net.add_edge(e[0], e[1], e[2])
 
     interpretations = rationalLLM.interpret_graph(net, text)
 

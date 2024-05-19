@@ -1,6 +1,7 @@
 from model import RationalLLM
 from BeliefNet import DAG
 from utils import cache_wrapper
+import json
 
 def prompt_to_output_test(text, cache = {}):
     rationalLLM = RationalLLM()
@@ -30,7 +31,7 @@ def prompt_to_output_test(text, cache = {}):
     print()
 
     for e in edges:
-        net.add_edge(e[0], e[1])
+        net.add_edge(e[0], e[1], e[2])
 
     interpretations = cache_wrapper(cache, 'interpretations', rationalLLM.interpret_graph, net, text)
     print('interpretations')
@@ -60,7 +61,7 @@ def prompt_to_output(text):
     edges = rationalLLM.get_edges(factors, nodes)
 
     for e in edges:
-        net.add_edge(e[0], e[1])
+        net.add_edge(e[0], e[1], e[2])
 
     interpretations = rationalLLM.interpret_graph(net, text)
 
@@ -69,4 +70,4 @@ def prompt_to_output(text):
     return net, output
 
 def get_inferences(text):
-    return prompt_to_output(text)[1]
+    return json.dumps(prompt_to_output(text)[1])

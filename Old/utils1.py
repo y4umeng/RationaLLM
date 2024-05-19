@@ -10,7 +10,7 @@ classifier = pipeline("text-classification", model = "microsoft/deberta-large-mn
 # LLM wrappers ------------------------------
 def get_response(message, instruction, temp = 0.6):
     response = client.chat.completions.create(
-		 model = 'gpt-35-turbo',
+		 model = '"gpt-4',
         temperature = temp,
         messages = [
             {"role": "system", "content": instruction},
@@ -52,25 +52,31 @@ def get_boolean_completion(statement, text=None):
 
 #Say whether the statement is inferencable by the text
 def get_opinion(statement, text):
-    inference = classifier('[CLS]' + text + '[SEP]' + statement + '[SEP]')[0]
+    prompt = 'Text:' + text + 'You are an expert labelling bot. Given only the previous text, label the following statement with: 0 - the text directly disagrees with the statement, 1 - the text directly agrees with the statement, 2 - the text does not directly give any opinion. return only 0,1 or 2. Statement: ' + statement + 'Label: '
 
-    #Split the complement probability
-    log0 = (1-inference['score'])/2
-    log1 = (1-inference['score'])/2
-    log2 = (1-inference['score'])/2
+    response = client.completions.create(
+        model = 'gpt-35-turbo',
+        prompt = prompt,
+        temperature = 0,
+        max_tokens = 1,
+        seed = 8,
+        logprobs = 3,
+    )
 
-    #Set the chosen class
-    if inference['label'] == 'CONTRADICTION':
-        log0 = inference['score']
-        answer = 0
-    elif inference['label'] == 'ENTAILMENT':
-        log1 = inference['score']
-        answer = 1
-    elif inference['label'] == 'NEUTRAL':
-        log2 = inference['score']
-        answer = 2
+    # Assert answer is valid
+    answer = response.choices[0].text
+    if answer not in list('012'): return None
 
-    return int(answer), [log0, log1, log2]
+    logprobs = response.choices[0].logprobs.top_logprobs[0]
+    if False in [i in logprobs for i in list('012')]: return None
+
+    # format logprobs and calculate probabilities
+    log0 = exp(logprobs['0'])
+    log1 = exp(logprobs['1'])
+    log2 = exp(logprobs['2'])
+    sum = log0 + log1 + log2
+
+    return int(answer), [log0/sum, log1/sum, log2/sum]
 
 #Wrapper for parsing what the LLM give
 

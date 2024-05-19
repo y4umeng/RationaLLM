@@ -2,6 +2,10 @@ from openai import AzureOpenAI
 from client import client
 from math import exp
 
+from transformers import pipeline
+
+classifier = pipeline("text-classification", model = "microsoft/deberta-large-mnli")
+
 
 # LLM wrappers ------------------------------
 def get_response(message, instruction, temp = 0.6):
@@ -23,13 +27,14 @@ def get_boolean_completion(statement, text=None):
         prompt = f'Text: {text}\nYou are an expert labelling bot. Given the previous text, label the following statement with boolean value 0 or 1.\nStatement: {statement}\nLabel: '
     else:
         prompt = f'You are an expert labelling bot. Label the following statement with boolean value 0 or 1 indicating its truthfulnes.\nStatement: {statement}\nLabel: '
-    response = client.completions.create(
+    response = client.chat.completions.create(
         model = 'gpt-35-turbo',
-        prompt = prompt,
+        messages = [{"role": "user", "content": prompt}],
         temperature = 0,
         max_tokens = 1,
         seed = 8,
-        logprobs = 2,
+        logprobs = True,
+        top_logprobs = 2,
     )
 
     # assert answer is 0 or 1
@@ -47,33 +52,52 @@ def get_boolean_completion(statement, text=None):
 
 #Say whether the statement is inferencable by the text
 def get_opinion(statement, text):
-    prompt = 'Text:' + text + 'You are an expert labelling bot. Given only the previous text, label the following statement with: 0 - the text directly disagrees with the statement, 1 - the text directly agrees with the statement, 2 - the text does not directly give any opinion. return only 0,1 or 2. Statement: ' + statement + 'Label: '
+    inference = classifier('[CLS]' + text + '[SEP]' + statement + '[SEP]')[0]
 
-    response = client.completions.create(
-		model = 'gpt-35-turbo',
-        prompt = prompt,
-        temperature = 0,
-        max_tokens = 1,
-        seed = 8,
-        logprobs = 3,
-    )
+    #Split the complement probability
+    log0 = (1-inference['score'])/2
+    log1 = (1-inference['score'])/2
+    log2 = (1-inference['score'])/2
 
-    # Assert answer is valid
-    answer = response.choices[0].text
-    if answer not in list('012'): return None
+    #Set the chosen class
+    if inference['label'] == 'CONTRADICTION':
+        log0 = inference['score']
+        answer = 0
+    elif inference['label'] == 'ENTAILMENT':
+        log1 = inference['score']
+        answer = 1
+    elif inference['label'] == 'NEUTRAL':
+        log2 = inference['score']
+        answer = 2
 
-    logprobs = response.choices[0].logprobs.top_logprobs[0]
-    if False in [i in logprobs for i in list('012')]: return None
+    return int(answer), [log0, log1, log2]
 
-    # format logprobs and calculate probabilities
-    log0 = exp(logprobs['0'])
-    log1 = exp(logprobs['1'])
-    log2 = exp(logprobs['2'])
-    sum = log0 + log1 + log2
+#Wrapper for parsing what the LLM give
 
-    return int(answer), [log0/sum, log1/sum, log2/sum]
+def get_list(text, instruction):
+    response = get_response(text, instruction, 0)
+    rawElements = response.split('\n')
+
+    #clean LLM mess:
+    elements = [clean_text(text) for text in rawElements]
+
+    elements = [text for text in elements if not_mess(text)]
+
+    return elements
 
 # Other utils
+def not_mess(text):
+    mess = ['']
+    if text in mess:
+        return False
+
+    messSegments = ['As an AI language model']
+    for messSegment in messSegments:
+        if text in messSegment:
+            return False
+
+    return True
+
 def clean_text(text):
     return ''.join([char for char in text.lower() if ord(char) >= 97 and ord(char) <= 122 or char == ' ']).strip()
 

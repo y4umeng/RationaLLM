@@ -1,5 +1,5 @@
 from openai import AzureOpenAI
-from utils import get_response, get_boolean_completion, clean_text, get_opinion, get_span
+from utils import get_response, get_boolean_completion, clean_text, get_opinion, get_span, get_list
 
 class RationalLLM():
     """
@@ -19,9 +19,7 @@ class RationalLLM():
         #instruction = 'I want you to act as a language expert. Your task is to extract concise and relevant statements from the text. The truthfulness of the statement is irrelevant. Please only reply with the bullet list and nothing else.'
         #instruction = 'Extract a list of subjects and objects from the text'
 
-        response = get_response(text, instruction, 0)
-        unformatted_nodes = response.split('\n')
-        nodes = [clean_text(text) for text in unformatted_nodes][:size]
+        nodes = get_list(text, instruction)[:size]
             
         return nodes
     
@@ -29,11 +27,8 @@ class RationalLLM():
         instructionChild = 'What factors are the implications of the phrase. Give only the title of each factor in a bullet list'
         instructionParent = 'What factors imply the phrase. Give only the title of each factor in a bullet list'
 
-        children = get_response(node, instructionChild, 0.6)
-        parents = get_response(node, instructionParent, 0.6)
-
-        children = [clean_text(i) for i in children.split('\n')]
-        parents = [clean_text(i) for i in parents.split('\n')]
+        children = get_list(node, instructionChild)
+        parents = get_list(node, instructionParent)
 
         factors = parents + children
 
@@ -41,14 +36,12 @@ class RationalLLM():
         return factors, parents, children
 
 
-    def factor_parsing(self, factors, nodes, size = 6):
+    def factor_parsing(self, factors, nodes, size = 5):
         #instruction = remove bullet form:'
         #r = get_response(','.join(factors), instruction, 0.6)
 
         instruction = 'Condense the list into only' + str(size) + 'distinct factors and nothing else in a bullet form:'
-        r = get_response(','.join(factors), instruction, 0.6)
-
-        factors = [clean_text(i) for i in r.split('\n')][:size]
+        factors = get_list(','.join(factors), instruction)[:size]
 
         return factors + nodes
 
@@ -87,15 +80,17 @@ class RationalLLM():
             try:
                 statement = edge[0] + ' influences ' + edge[1]
 
-                r = get_opinion(statement, prompt)
-                if r[0] != 1 and r[1][r[0]] > threshold:
+                r = get_opinion(prompt, statement)
+                confidence = graph.get_edge_data(edge[0], edge[1])['weight'] *r[1][r[0]]
+
+                if r[0] != 1 and confidence > threshold:
                     if r[0] == 0:
                         statement += '. Text disagrees.'
 
                     else:#2
                         statement += '. Not said in text.'
 
-                    interpretations.append([edge, statement, r[1][r[0]]])
+                    interpretations.append([edge, statement, confidence])
             except:
                 pass
 
@@ -138,8 +133,8 @@ class RationalLLM():
             output[-1]["attribute"] = example["attribute"]
             output[-1]["value"] = example["value"]
             output[-1]["explanation"] = comment
-            output[-1]["span"] = span
-            output[-1]["confidence"] = confidence
+            output[-1]["span"] = [span]
+            output[-1]["confidence"] = f'{confidence:.2f}'
 
         return output
 
