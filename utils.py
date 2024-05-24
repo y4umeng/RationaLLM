@@ -8,10 +8,11 @@ classifier = pipeline("text-classification", model = "microsoft/deberta-large-mn
 
 
 # LLM wrappers ------------------------------
-def get_response(message, instruction, temp = 0.6):
+def get_response(message, instruction, temp = 0.6, functions=None):
     response = client.chat.completions.create(
-		 model = 'gpt-35-turbo',
+		 model = 'gpt-4',
         temperature = temp,
+        functions=functions,
         messages = [
             {"role": "system", "content": instruction},
             {"role": "user", "content": message}
@@ -20,7 +21,10 @@ def get_response(message, instruction, temp = 0.6):
     # print token usage
     # print(response.usage)
 
-    return response.choices[0].message.content
+    if functions is None or response.choices[0].message.function_call is None:
+        return response.choices[0].message.content
+    else:
+        return response.choices[0].message.function_call.arguments
 
 def get_boolean_completion(statement, text=None):
     if not text:
